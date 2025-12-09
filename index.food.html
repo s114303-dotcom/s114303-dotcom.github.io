@@ -6,6 +6,315 @@
     <link rel="icon" href="icon.png">
   </head>
   <body>
+/*
+Random Meal Picker — Single-file React component
+Drop this component into a React + Tailwind project (e.g. Vite + React + Tailwind).
+
+Quick setup (if you need a project):
+1) Create project with Vite: `npm create vite@latest my-app -- --template react`
+2) Install deps: `cd my-app && npm install`
+3) Setup Tailwind (follow Tailwind docs for Vite). Or use any existing CSS system and adjust classes.
+4) Save this file as `src/components/MealPicker.jsx` and import in `App.jsx`:
+   `import MealPicker from './components/MealPicker';` then `<MealPicker />` in JSX.
+
+Functionality included:
+- Add / edit / delete meals with optional tags (e.g. vegetarian, spicy, breakfast)
+- Quick preset list and sample meals on first run
+- Randomly pick today's meal with animated selection effect
+- Filters by tag and meal type (breakfast/lunch/dinner/all)
+- Save / load lists using localStorage
+- Export / import JSON for sharing
+- Simple pick history and undo last pick
+
+This is intentionally a single-file component for easy copy-paste. Customize styles and behaviour as you like.
+*/
+
+import React, { useEffect, useMemo, useState, useRef } from 'react';
+
+const SAMPLE_MEALS = [
+  { id: 'm1', name: '牛肉麵', tags: ['lunch', 'dinner', 'meat'] },
+  { id: 'm2', name: '三明治', tags: ['breakfast', 'lunch', 'quick'] },
+  { id: 'm3', name: '蔬菜炒飯', tags: ['lunch', 'dinner', 'vegetarian'] },
+  { id: 'm4', name: '拉麵', tags: ['lunch', 'dinner'] },
+  { id: 'm5', name: '粥 + 小菜', tags: ['breakfast', 'light'] },
+  { id: 'm6', name: '便當 (滷肉)', tags: ['lunch', 'dinner', 'meat'] },
+  { id: 'm7', name: '沙拉', tags: ['lunch', 'dinner', 'vegetarian', 'light'] },
+  { id: 'm8', name: '鍋貼', tags: ['lunch', 'dinner', 'quick'] }
+];
+
+const STORAGE_KEY = 'meal_picker_state_v1';
+
+export default function MealPicker() {
+  const [meals, setMeals] = useState([]);
+  const [filterTag, setFilterTag] = useState('all');
+  const [filterType, setFilterType] = useState('all');
+  const [query, setQuery] = useState('');
+  const [selected, setSelected] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [isShuffling, setIsShuffling] = useState(false);
+  const [newMealName, setNewMealName] = useState('');
+  const [newMealTags, setNewMealTags] = useState('');
+  const spinRef = useRef(null);
+
+  // initialize from localStorage or sample
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setMeals(parsed.meals || []);
+        setHistory(parsed.history || []);
+      } else {
+        setMeals(SAMPLE_MEALS);
+      }
+    } catch (e) {
+      console.error('load failed', e);
+      setMeals(SAMPLE_MEALS);
+    }
+  }, []);
+
+  // persist
+  useEffect(() => {
+    const payload = { meals, history };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  }, [meals, history]);
+
+  const allTags = useMemo(() => {
+    const s = new Set();
+    meals.forEach(m => (m.tags || []).forEach(t => s.add(t)));
+    return ['all', ...Array.from(s).sort()];
+  }, [meals]);
+
+  const visibleMeals = useMemo(() => {
+    return meals.filter(m => {
+      if (filterType !== 'all' && !(m.tags || []).includes(filterType)) return false;
+      if (filterTag !== 'all' && !(m.tags || []).includes(filterTag)) return false;
+      if (query && !m.name.toLowerCase().includes(query.toLowerCase())) return false;
+      return true;
+    });
+  }, [meals, filterTag, filterType, query]);
+
+  function addMeal() {
+    const name = newMealName.trim();
+    if (!name) return;
+    const tags = newMealTags
+      .split(',')
+      .map(t => t.trim())
+      .filter(Boolean);
+    const item = { id: cryptoRandomId(), name, tags };
+    setMeals(prev => [item, ...prev]);
+    setNewMealName('');
+    setNewMealTags('');
+  }
+
+  function removeMeal(id) {
+    setMeals(prev => prev.filter(m => m.id !== id));
+    setSelected(prev => (prev && prev.id === id ? null : prev));
+  }
+
+  function exportJSON() {
+    const data = JSON.stringify({ meals, history }, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'meals.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function importJSON(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const parsed = JSON.parse(e.target.result);
+        if (Array.isArray(parsed.meals)) setMeals(parsed.meals);
+        if (Array.isArray(parsed.history)) setHistory(parsed.history);
+      } catch (err) {
+        alert('Invalid JSON');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function pickRandom(animated = true) {
+    const pool = visibleMeals.length ? visibleMeals : meals;
+    if (!pool || pool.length === 0) {
+      alert('目前沒有餐點可供選擇，請先新增幾個。');
+      return;
+    }
+    if (!animated) {
+      const choice = pool[Math.floor(Math.random() * pool.length)];
+      setSelected(choice);
+      pushHistory(choice);
+      return;
+    }
+
+    // animated spin: highlight a series then settle
+    setIsShuffling(true);
+    const rounds = 24 + Math.floor(Math.random() * 12);
+    let i = 0;
+    const ids = pool.map(p => p.id);
+    const interval = 80;
+    const timer = setInterval(() => {
+      const idx = i % ids.length;
+      const id = ids[idx];
+      const item = pool.find(x => x.id === id);
+      setSelected(item);
+      i++;
+      if (i >= rounds) {
+        clearInterval(timer);
+        setIsShuffling(false);
+        pushHistory(selected || pool[0]);
+      }
+    }, interval);
+
+    // safety: ensure we push final choice after the loop ends
+    setTimeout(() => {
+      const final = pool[Math.floor(Math.random() * pool.length)];
+      setSelected(final);
+      pushHistory(final);
+      setIsShuffling(false);
+    }, rounds * interval + 60);
+  }
+
+  function pushHistory(item) {
+    if (!item) return;
+    const entry = { id: item.id, name: item.name, time: new Date().toISOString() };
+    setHistory(prev => [entry, ...prev].slice(0, 50));
+  }
+
+  function undoLastPick() {
+    setHistory(prev => prev.slice(1));
+    setSelected(prev => (history[1] ? { id: history[1].id, name: history[1].name } : null));
+  }
+
+  function clearAll() {
+    if (!confirm('確定要清除所有餐點與紀錄嗎？')) return;
+    setMeals([]);
+    setHistory([]);
+    setSelected(null);
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-4">隨機餐點挑選器</h1>
+
+      <section className="grid md:grid-cols-3 gap-4 mb-6">
+        <div className="md:col-span-2 bg-white p-4 rounded-2xl shadow-sm">
+          <div className="flex gap-2 items-center mb-3">
+            <input
+              className="flex-1 border rounded px-3 py-2"
+              placeholder="搜尋餐點 (或留空)"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+            />
+            <select value={filterType} onChange={e => setFilterType(e.target.value)} className="border rounded px-3 py-2">
+              <option value="all">所有餐別</option>
+              <option value="breakfast">早餐</option>
+              <option value="lunch">午餐</option>
+              <option value="dinner">晚餐</option>
+            </select>
+            <select value={filterTag} onChange={e => setFilterTag(e.target.value)} className="border rounded px-3 py-2">
+              {allTags.map(t => (
+                <option key={t} value={t}>{t === 'all' ? '全部標籤' : t}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid gap-2 max-h-64 overflow-auto">
+            {visibleMeals.map(m => (
+              <div key={m.id} className={`flex items-center justify-between p-2 border rounded ${selected && selected.id === m.id ? 'ring-2 ring-offset-2 ring-indigo-300' : ''}`}>
+                <div>
+                  <div className="font-medium">{m.name}</div>
+                  <div className="text-sm opacity-70">{(m.tags || []).join(' · ')}</div>
+                </div>
+                <div className="flex gap-2">
+                  <button className="px-3 py-1 border rounded" onClick={() => setSelected(m)}>選為已選</button>
+                  <button className="px-3 py-1 border rounded" onClick={() => removeMeal(m.id)}>刪除</button>
+                </div>
+              </div>
+            ))}
+            {visibleMeals.length === 0 && <div className="p-4 text-center opacity-60">沒有符合條件的餐點。</div>}
+          </div>
+
+          <div className="mt-4 flex gap-2">
+            <button className="flex-1 py-2 rounded-2xl bg-indigo-600 text-white font-semibold shadow" onClick={() => pickRandom(true)} disabled={isShuffling}>搖一搖選餐</button>
+            <button className="px-4 py-2 rounded-2xl border" onClick={() => pickRandom(false)} disabled={isShuffling}>直接隨機</button>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <button className="py-2 border rounded" onClick={exportJSON}>匯出清單</button>
+            <label className="py-2 border rounded text-center cursor-pointer">
+              匯入清單
+              <input type="file" accept="application/json" className="hidden" onChange={e => importJSON(e.target.files?.[0])} />
+            </label>
+          </div>
+        </div>
+
+        <aside className="bg-white p-4 rounded-2xl shadow-sm">
+          <h2 className="font-semibold mb-2">新增餐點</h2>
+          <input value={newMealName} onChange={e => setNewMealName(e.target.value)} placeholder="餐點名稱" className="w-full border rounded px-3 py-2 mb-2" />
+          <input value={newMealTags} onChange={e => setNewMealTags(e.target.value)} placeholder="標籤 (以逗號分隔，例如: lunch,vegetarian)" className="w-full border rounded px-3 py-2 mb-2" />
+          <div className="flex gap-2">
+            <button className="flex-1 py-2 rounded bg-green-600 text-white" onClick={addMeal}>加入</button>
+            <button className="py-2 px-3 border rounded" onClick={() => { setNewMealName(''); setNewMealTags(''); }}>清除</button>
+          </div>
+
+          <hr className="my-3" />
+
+          <div className="text-sm opacity-80 mb-2">已選: {selected ? selected.name : '（尚未選定）'}</div>
+          <div className="flex gap-2">
+            <button className="flex-1 py-2 border rounded" onClick={() => { navigator.clipboard?.writeText(selected?.name || ''); }}>複製結果</button>
+            <button className="py-2 px-3 border rounded" onClick={undoLastPick} disabled={history.length === 0}>復原上一步</button>
+          </div>
+
+          <hr className="my-3" />
+
+          <div className="text-xs text-red-600">設計提醒：此清單存在於您的瀏覽器 (localStorage)。如需多人共用，請告訴我我可以幫您加一個簡單後端或直接部署到 Google Sheets/API。</div>
+
+          <div className="mt-3">
+            <button className="w-full py-2 border rounded" onClick={clearAll}>清除所有資料</button>
+          </div>
+        </aside>
+      </section>
+
+      <section className="grid md:grid-cols-2 gap-4">
+        <div className="bg-white p-4 rounded-2xl shadow-sm">
+          <h3 className="font-semibold mb-2">挑選紀錄</h3>
+          <div className="max-h-48 overflow-auto text-sm">
+            {history.length === 0 && <div className="opacity-60">尚無紀錄。</div>}
+            {history.map((h, idx) => (
+              <div key={h.time + idx} className="flex justify-between items-center py-1 border-b last:border-b-0">
+                <div>
+                  <div className="font-medium">{h.name}</div>
+                  <div className="text-xs opacity-60">{new Date(h.time).toLocaleString()}</div>
+                </div>
+                <div className="text-xs opacity-60">#{idx + 1}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white p-4 rounded-2xl shadow-sm">
+          <h3 className="font-semibold mb-2">範例餐點與說明</h3>
+          <p className="text-sm opacity-80">快速上手：在右側新增餐點，可加入標籤來分類（如 breakfast, lunch, dinner, vegetarian, quick 等）。使用上方的篩選器看到符合條件的餐點，按「搖一搖選餐」讓它有動畫效果，或按「直接隨機」立即得到結果。</p>
+          <hr className="my-2" />
+          <p className="text-xs opacity-60">想要部署到網域/SSL、或加上多人同步（後端 + 分享連結）嗎？回覆我想要的功能，我可以幫您擴充並產出部署步驟。</p>
+        </div>
+      </section>
+
+      <footer className="mt-6 text-center text-sm opacity-60">Built with ❤️ — Meal Picker</footer>
+    </div>
+  );
+}
+
+// --- helper ---
+function cryptoRandomId() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return 'id_' + Math.random().toString(36).slice(2, 9);
+}
 
   </body>
 </html>
