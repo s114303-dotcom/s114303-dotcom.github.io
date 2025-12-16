@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>今天吃什麼（穩定版）</title>
+  <title>今天吃什麼</title>
   <style>
     body {
       font-family: system-ui, sans-serif;
@@ -18,26 +18,32 @@
       background: white;
       padding: 24px;
       border-radius: 16px;
-      width: 320px;
+      width: 340px;
       text-align: center;
       box-shadow: 0 10px 25px rgba(0,0,0,0.15);
     }
     h1 { margin: 0 0 8px; }
-    .mode { font-size: 14px; margin-bottom: 8px; }
+    .mode { font-size: 14px; margin-bottom: 10px; }
     .result {
       font-size: 22px;
       font-weight: bold;
       margin: 12px 0;
     }
     .visual {
-      height: 160px;
-      border-radius: 12px;
+      height: 180px;
+      border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 26px;
-      background: linear-gradient(135deg, #fde68a, #fca5a5);
       margin-bottom: 16px;
+      background: #eee;
+      overflow: hidden;
+      font-size: 48px;
+    }
+    .visual img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
     button {
       width: 100%;
@@ -53,45 +59,74 @@
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>今天吃什麼？</h1>
-    <div class="mode">模式：<span id="modeText">正常模式</span></div>
 
-    <div id="result" class="result">按下面開始</div>
-    <div id="visual" class="visual">🍽️</div>
+<div class="card">
+  <h1>今天吃什麼？</h1>
+  <div class="mode">模式：<span id="modeText">正常模式</span></div>
 
-    <button id="pickBtn" class="primary">幫我決定</button>
-    <button id="toggleBtn" class="secondary">切換模式</button>
-  </div>
+  <div id="result" class="result">按下面開始</div>
+  <div id="visual" class="visual">🍽️</div>
 
-  <script>
-    const normalMeals = [
-      '滷肉飯','雞肉飯','排骨便當','炸雞腿便當','牛肉麵','拉麵','咖哩飯','漢堡'
-    ];
+  <button id="pickBtn" class="primary">幫我決定</button>
+  <button id="toggleBtn" class="secondary">切換模式</button>
+</div>
 
-    const cheapMeals = [
-      '泡麵','滷肉飯','吐司','地瓜','茶葉蛋','關東煮','冷凍水餃','多喝水'
-    ];
+<script>
+  const normalMeals = [
+    { name: '滷肉飯', emoji: '🍚', img: 'braised pork rice' },
+    { name: '牛肉麵', emoji: '🍜', img: 'beef noodle soup' },
+    { name: '咖哩飯', emoji: '🍛', img: 'curry rice' },
+    { name: '漢堡', emoji: '🍔', img: 'hamburger' },
+    { name: '披薩', emoji: '🍕', img: 'pizza' },
+    { name: '水餃', emoji: '🥟', img: 'dumplings' }
+  ];
 
-    let mode = 'normal';
+  const cheapMeals = [
+    { name: '泡麵', emoji: '🍜', img: 'instant noodles' },
+    { name: '吐司', emoji: '🍞', img: 'toast bread' },
+    { name: '地瓜', emoji: '🍠', img: 'sweet potato' },
+    { name: '茶葉蛋', emoji: '🥚', img: 'tea egg' },
+    { name: '關東煮', emoji: '🍢', img: 'oden' },
+    { name: '冷凍水餃', emoji: '🥟', img: 'dumplings' }
+  ];
 
-    const modeText = document.getElementById('modeText');
-    const result = document.getElementById('result');
-    const visual = document.getElementById('visual');
+  let mode = 'normal';
 
-    document.getElementById('pickBtn').onclick = function () {
-      const pool = mode === 'normal' ? normalMeals : cheapMeals;
-      const meal = pool[Math.floor(Math.random() * pool.length)];
-      result.textContent = meal;
-      visual.textContent = '🍴 ' + meal;
+  const modeText = document.getElementById('modeText');
+  const result = document.getElementById('result');
+  const visual = document.getElementById('visual');
+
+  function showMeal(meal) {
+    result.textContent = meal.name;
+
+    // 先顯示 emoji（備援）
+    visual.textContent = meal.emoji;
+
+    // 嘗試載入圖片
+    const img = new Image();
+    img.src = `https://source.unsplash.com/600x400/?${encodeURIComponent(meal.img)}`;
+
+    img.onload = () => {
+      visual.innerHTML = '';
+      visual.appendChild(img);
     };
 
-    document.getElementById('toggleBtn').onclick = function () {
-      mode = mode === 'normal' ? 'cheap' : 'normal';
-      modeText.textContent = mode === 'normal' ? '正常模式' : '省錢模式';
-      result.textContent = '已切換模式';
-      visual.textContent = '🍽️';
-    };
-  </script>
+    // 如果圖片失敗，就維持 emoji，不做任何事
+  }
+
+  document.getElementById('pickBtn').onclick = () => {
+    const pool = mode === 'normal' ? normalMeals : cheapMeals;
+    const meal = pool[Math.floor(Math.random() * pool.length)];
+    showMeal(meal);
+  };
+
+  document.getElementById('toggleBtn').onclick = () => {
+    mode = mode === 'normal' ? 'cheap' : 'normal';
+    modeText.textContent = mode === 'normal' ? '正常模式' : '省錢模式';
+    result.textContent = '已切換模式';
+    visual.textContent = '🍽️';
+  };
+</script>
+
 </body>
 </html>
