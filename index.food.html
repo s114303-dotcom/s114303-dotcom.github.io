@@ -16,28 +16,34 @@
     }
     .card {
       background: #fff;
-      padding: 32px 28px 36px;
+      padding: 28px 24px 30px;
       border-radius: 20px;
-      width: 340px;
+      width: 360px;
       text-align: center;
       box-shadow: 0 10px 30px rgba(0,0,0,0.15);
     }
     h1 {
-      margin: 0 0 16px;
+      margin: 0 0 10px;
       font-size: 26px;
     }
     .mode {
       font-size: 14px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
-    .mode span {
-      font-weight: 600;
-    }
+    .mode span { font-weight: 600; }
     .result {
       font-size: 22px;
       font-weight: 600;
-      margin: 18px 0 26px;
+      margin: 14px 0 10px;
       min-height: 1.5em;
+    }
+    img {
+      width: 100%;
+      border-radius: 14px;
+      margin: 10px 0 18px;
+      display: none;
+      object-fit: cover;
+      height: 180px;
     }
     button {
       width: 100%;
@@ -49,20 +55,16 @@
       cursor: pointer;
       background: #6366f1;
       color: white;
-      transition: transform 0.05s ease, box-shadow 0.05s ease;
-      box-shadow: 0 6px 16px rgba(99,102,241,0.4);
       margin-bottom: 10px;
+      box-shadow: 0 6px 16px rgba(99,102,241,0.4);
     }
     button.secondary {
       background: #e5e7eb;
       color: #111;
       box-shadow: none;
     }
-    button:active {
-      transform: translateY(1px);
-    }
     .hint {
-      margin-top: 10px;
+      margin-top: 8px;
       font-size: 13px;
       color: #666;
     }
@@ -72,52 +74,116 @@
   <div class="card">
     <h1>今天吃什麼？</h1>
 
-    <div class="mode">
-      模式：<span id="modeText">正常模式</span>
-    </div>
+    <div class="mode">模式：<span id="modeText">正常模式</span></div>
 
     <div id="result" class="result">🤔</div>
+    <img id="mealImage" alt="餐點圖片" />
 
     <button onclick="pickMeal()">幫我決定</button>
     <button class="secondary" onclick="toggleMode()">切換模式</button>
 
-    <div class="hint">正常 / 省錢 模式可隨時切換</div>
+    <div class="hint">圖片來源：Unsplash（自動配對）</div>
   </div>
 
   <script>
-    // ===== 餐點清單 =====
+    // ===== 正常模式餐點 =====
     const normalMeals = [
-     '牛肉麵','紅燒牛肉麵','拉麵','豚骨拉麵','滷肉飯','雞肉飯','排骨便當','雞腿便當','燒肉便當',
-'鍋貼','水餃','煎餃','炒飯','炒麵','咖哩飯','日式咖哩',
-'義大利麵','白醬義大利麵','紅醬義大利麵','披薩','焗烤',
-'漢堡','炸雞','炸魚薯條','丼飯','親子丼','燒肉丼',
-'火鍋','麻辣鍋','壽喜燒','鹹酥雞','雞排',
-'壽司','手捲','生魚片','涼麵','沙拉'
+      '滷肉飯','雞肉飯','排骨便當','炸雞腿便當','控肉飯',
+      '牛肉麵','麻醬麵','乾拌麵','拉麵','炒麵',
+      '水餃','鍋貼','鹹酥雞','雞排','蚵仔煎',
+      '咖哩飯','義大利麵','披薩','漢堡','丼飯',
+      '沙拉','涼麵','粥','地瓜','湯麵',
+      '泡麵','便利商店','外送','隨便吃'
     ];
 
+    // ===== 省錢模式餐點 =====
     const cheapMeals = [
-  '滷肉飯','雞肉飯','白飯＋滷汁','醬油拌飯','拌豬油','地瓜','吐司','饅頭','白吐司夾蛋',
-'泡麵','乾拌麵','陽春麵','冬粉','米粉湯','粥','麵線','速食麵加蛋',
-'茶葉蛋','滷蛋','煎蛋','水煮蛋','豆腐','板豆腐','皮蛋豆腐','豆干',
-'關東煮','便利商店飯糰','打折便當','即期熟食',
-'冷凍水餃','冷凍煎餃','冷凍炒飯','昨天剩菜','家裡隨便煮',
-'多喝水','先睡覺','不吃了（但會偷吃）'
+      '滷肉飯','雞肉飯','白飯＋滷汁','醬油拌飯','地瓜','吐司','饅頭',
+      '泡麵','乾拌麵','陽春麵','冬粉','米粉湯','粥','麵線',
+      '滷蛋','煎蛋','茶葉蛋','豆干','板豆腐','皮蛋豆腐',
+      '茶葉蛋＋飯糰','地瓜＋豆漿','關東煮','微波炒飯','打折便當',
+      '冷凍水餃','冷凍炒飯','昨天剩菜',
+      '多喝水','先睡覺','不吃了（騙自己）'
     ];
 
-    // ===== 狀態 =====
-    let mode = 'normal'; // normal | cheap
+    // ===== 餐點圖片關鍵字 =====
+    const mealKeywords = {
+      '滷肉飯': 'braised pork rice',
+      '雞肉飯': 'chicken rice',
+      '排骨便當': 'pork chop bento',
+      '炸雞腿便當': 'fried chicken bento',
+      '控肉飯': 'braised pork rice',
+      '白飯＋滷汁': 'braised pork rice',
+      '醬油拌飯': 'soy sauce rice',
+      '牛肉麵': 'beef noodle soup',
+      '麻醬麵': 'sesame noodles',
+      '乾拌麵': 'dry noodles',
+      '拉麵': 'ramen',
+      '炒麵': 'stir fried noodles',
+      '湯麵': 'noodle soup',
+      '陽春麵': 'plain noodles',
+      '冬粉': 'glass noodles',
+      '米粉湯': 'rice noodle soup',
+      '麵線': 'vermicelli noodles',
+      '水餃': 'dumplings',
+      '鍋貼': 'gyoza',
+      '鹹酥雞': 'taiwanese fried chicken',
+      '雞排': 'fried chicken cutlet',
+      '蚵仔煎': 'oyster omelette',
+      '咖哩飯': 'curry rice',
+      '義大利麵': 'pasta',
+      '披薩': 'pizza',
+      '漢堡': 'burger',
+      '丼飯': 'donburi',
+      '沙拉': 'salad',
+      '涼麵': 'cold noodles',
+      '粥': 'rice porridge',
+      '地瓜': 'sweet potato',
+      '泡麵': 'instant noodles',
+      '吐司': 'toast',
+      '饅頭': 'steamed bun',
+      '滷蛋': 'braised egg',
+      '煎蛋': 'fried egg',
+      '茶葉蛋': 'tea egg',
+      '豆干': 'braised tofu',
+      '板豆腐': 'tofu',
+      '皮蛋豆腐': 'century egg tofu',
+      '關東煮': 'oden',
+      '微波炒飯': 'fried rice',
+      '打折便當': 'bento',
+      '冷凍水餃': 'dumplings',
+      '冷凍炒飯': 'fried rice',
+      '昨天剩菜': 'leftover food',
+      '茶葉蛋＋飯糰': 'convenience store food',
+      '地瓜＋豆漿': 'taiwan breakfast',
+      '便利商店': 'convenience store food',
+      '外送': 'food delivery',
+      '隨便吃': 'food',
+      '多喝水': 'water',
+      '先睡覺': 'sleep',
+      '不吃了': 'empty plate'
+    };
+
+    let mode = 'normal';
 
     function toggleMode() {
       mode = mode === 'normal' ? 'cheap' : 'normal';
-      document.getElementById('modeText').textContent =
-        mode === 'normal' ? '正常模式' : '省錢模式';
+      document.getElementById('modeText').textContent = mode === 'normal' ? '正常模式' : '省錢模式';
       document.getElementById('result').textContent = '🤔';
+      document.getElementById('mealImage').style.display = 'none';
     }
 
     function pickMeal() {
       const pool = mode === 'normal' ? normalMeals : cheapMeals;
-      const randomIndex = Math.floor(Math.random() * pool.length);
-      document.getElementById('result').textContent = pool[randomIndex];
+      const meal = pool[Math.floor(Math.random() * pool.length)];
+      document.getElementById('result').textContent = meal;
+
+      const img = document.getElementById('mealImage');
+      const key = Object.keys(mealKeywords).find(k => meal.includes(k));
+      const keyword = key ? mealKeywords[key] : 'food';
+
+      img.src = `https://source.unsplash.com/600x400/?${encodeURIComponent(keyword)}`;
+      img.style.display = 'block';
     }
   </script>
 </body>
