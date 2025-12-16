@@ -6,7 +6,7 @@
   <title>今天吃什麼</title>
   <style>
     body {
-      font-family: system-ui, sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
       background: #f3f4f6;
       min-height: 100vh;
       margin: 0;
@@ -18,7 +18,7 @@
       background: white;
       padding: 24px;
       border-radius: 16px;
-      width: 340px;
+      width: 360px;
       text-align: center;
       box-shadow: 0 10px 25px rgba(0,0,0,0.15);
     }
@@ -30,7 +30,7 @@
       margin: 12px 0;
     }
     .visual {
-      height: 180px;
+      height: 200px;
       border-radius: 14px;
       display: flex;
       align-items: center;
@@ -38,7 +38,7 @@
       margin-bottom: 16px;
       background: #eee;
       overflow: hidden;
-      font-size: 48px;
+      font-size: 56px;
     }
     .visual img {
       width: 100%;
@@ -74,20 +74,68 @@
 <script>
   const normalMeals = [
     { name: '滷肉飯', emoji: '🍚', img: 'braised pork rice' },
+    { name: '雞肉飯', emoji: '🍚', img: 'chicken rice' },
+    { name: '排骨便當', emoji: '🍱', img: 'pork chop bento' },
+    { name: '炸雞腿便當', emoji: '🍗', img: 'fried chicken bento' },
+    { name: '控肉飯', emoji: '🍖', img: 'braised pork belly rice' },
     { name: '牛肉麵', emoji: '🍜', img: 'beef noodle soup' },
+    { name: '麻醬麵', emoji: '🍜', img: 'sesame noodles' },
+    { name: '乾拌麵', emoji: '🍜', img: 'dry noodles' },
+    { name: '拉麵', emoji: '🍜', img: 'ramen' },
+    { name: '炒麵', emoji: '🍜', img: 'fried noodles' },
+    { name: '水餃', emoji: '🥟', img: 'dumplings' },
+    { name: '鍋貼', emoji: '🥟', img: 'potstickers' },
+    { name: '鹹酥雞', emoji: '🍗', img: 'taiwanese fried chicken' },
+    { name: '雞排', emoji: '🍗', img: 'chicken cutlet' },
+    { name: '蚵仔煎', emoji: '🦪', img: 'oyster omelette' },
     { name: '咖哩飯', emoji: '🍛', img: 'curry rice' },
-    { name: '漢堡', emoji: '🍔', img: 'hamburger' },
+    { name: '義大利麵', emoji: '🍝', img: 'spaghetti' },
     { name: '披薩', emoji: '🍕', img: 'pizza' },
-    { name: '水餃', emoji: '🥟', img: 'dumplings' }
+    { name: '漢堡', emoji: '🍔', img: 'hamburger' },
+    { name: '丼飯', emoji: '🍚', img: 'donburi rice bowl' },
+    { name: '沙拉', emoji: '🥗', img: 'salad' },
+    { name: '涼麵', emoji: '🍜', img: 'cold noodles' },
+    { name: '粥', emoji: '🥣', img: 'rice porridge' },
+    { name: '地瓜', emoji: '🍠', img: 'sweet potato' },
+    { name: '湯麵', emoji: '🍜', img: 'soup noodles' },
+    { name: '泡麵', emoji: '🍜', img: 'instant noodles' },
+    { name: '便利商店', emoji: '🏪', img: 'convenience store food' },
+    { name: '外送', emoji: '🛵', img: 'food delivery' },
+    { name: '隨便吃', emoji: '🤷‍♂️', img: 'random food' }
   ];
 
   const cheapMeals = [
-    { name: '泡麵', emoji: '🍜', img: 'instant noodles' },
-    { name: '吐司', emoji: '🍞', img: 'toast bread' },
+    { name: '滷肉飯', emoji: '🍚', img: 'braised pork rice' },
+    { name: '雞肉飯', emoji: '🍚', img: 'chicken rice' },
+    { name: '白飯＋滷汁', emoji: '🍚', img: 'rice with sauce' },
+    { name: '醬油拌飯', emoji: '🍚', img: 'soy sauce rice' },
     { name: '地瓜', emoji: '🍠', img: 'sweet potato' },
+    { name: '吐司', emoji: '🍞', img: 'toast bread' },
+    { name: '饅頭', emoji: '🥯', img: 'steamed bun' },
+    { name: '泡麵', emoji: '🍜', img: 'instant noodles' },
+    { name: '乾拌麵', emoji: '🍜', img: 'dry noodles' },
+    { name: '陽春麵', emoji: '🍜', img: 'plain noodles' },
+    { name: '冬粉', emoji: '🍜', img: 'glass noodles' },
+    { name: '米粉湯', emoji: '🍜', img: 'rice vermicelli soup' },
+    { name: '粥', emoji: '🥣', img: 'rice porridge' },
+    { name: '麵線', emoji: '🍜', img: 'thin noodles' },
+    { name: '滷蛋', emoji: '🥚', img: 'braised egg' },
+    { name: '煎蛋', emoji: '🍳', img: 'fried egg' },
     { name: '茶葉蛋', emoji: '🥚', img: 'tea egg' },
+    { name: '豆干', emoji: '🟫', img: 'dried tofu' },
+    { name: '板豆腐', emoji: '⬜', img: 'tofu' },
+    { name: '皮蛋豆腐', emoji: '⬜', img: 'century egg tofu' },
+    { name: '茶葉蛋＋飯糰', emoji: '🍙', img: 'rice ball tea egg' },
+    { name: '地瓜＋豆漿', emoji: '🍠', img: 'sweet potato soy milk' },
     { name: '關東煮', emoji: '🍢', img: 'oden' },
-    { name: '冷凍水餃', emoji: '🥟', img: 'dumplings' }
+    { name: '微波炒飯', emoji: '🍚', img: 'microwave fried rice' },
+    { name: '打折便當', emoji: '🍱', img: 'discount bento' },
+    { name: '冷凍水餃', emoji: '🥟', img: 'frozen dumplings' },
+    { name: '冷凍炒飯', emoji: '🍚', img: 'frozen fried rice' },
+    { name: '昨天剩菜', emoji: '🍱', img: 'leftover food' },
+    { name: '多喝水', emoji: '💧', img: 'drink water' },
+    { name: '先睡覺', emoji: '😴', img: 'sleep' },
+    { name: '不吃了（騙自己）', emoji: '😭', img: 'skip meal' }
   ];
 
   let mode = 'normal';
@@ -98,20 +146,15 @@
 
   function showMeal(meal) {
     result.textContent = meal.name;
-
-    // 先顯示 emoji（備援）
     visual.textContent = meal.emoji;
 
-    // 嘗試載入圖片
     const img = new Image();
-    img.src = `https://source.unsplash.com/600x400/?${encodeURIComponent(meal.img)}`;
+    img.src = `https://source.unsplash.com/800x600/?${encodeURIComponent(meal.img)}`;
 
     img.onload = () => {
       visual.innerHTML = '';
       visual.appendChild(img);
     };
-
-    // 如果圖片失敗，就維持 emoji，不做任何事
   }
 
   document.getElementById('pickBtn').onclick = () => {
