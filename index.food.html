@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>今天吃什麼？（終極保底版）</title>
+  <title>今天吃什麼（穩定版）</title>
   <style>
     body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+      font-family: system-ui, sans-serif;
+      background: #f3f4f6;
       min-height: 100vh;
       margin: 0;
       display: flex;
@@ -15,60 +15,41 @@
       justify-content: center;
     }
     .card {
-      background: #fff;
-      padding: 28px 24px 30px;
-      border-radius: 20px;
-      width: 360px;
+      background: white;
+      padding: 24px;
+      border-radius: 16px;
+      width: 320px;
       text-align: center;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
     }
-    h1 {
-      margin: 0 0 10px;
-      font-size: 26px;
-    }
-    .mode {
-      font-size: 14px;
-      margin-bottom: 10px;
-    }
+    h1 { margin: 0 0 8px; }
+    .mode { font-size: 14px; margin-bottom: 8px; }
     .result {
       font-size: 22px;
-      font-weight: 600;
-      margin: 14px 0 10px;
-      min-height: 1.5em;
+      font-weight: bold;
+      margin: 12px 0;
     }
-    /* 這不是 img，是 100% 不會失敗的視覺區塊 */
     .visual {
-      height: 180px;
-      border-radius: 14px;
-      margin: 10px 0 18px;
+      height: 160px;
+      border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 28px;
-      font-weight: 700;
-      color: #111;
+      font-size: 26px;
       background: linear-gradient(135deg, #fde68a, #fca5a5);
+      margin-bottom: 16px;
     }
     button {
       width: 100%;
-      padding: 14px;
-      font-size: 18px;
-      font-weight: 600;
+      padding: 12px;
+      font-size: 16px;
       border: none;
       border-radius: 999px;
       cursor: pointer;
-      background: #6366f1;
-      color: white;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
-    button.secondary {
-      background: #e5e7eb;
-      color: #111;
-    }
-    .hint {
-      font-size: 13px;
-      color: #666;
-    }
+    .primary { background: #6366f1; color: white; }
+    .secondary { background: #e5e7eb; }
   </style>
 </head>
 <body>
@@ -76,49 +57,41 @@
     <h1>今天吃什麼？</h1>
     <div class="mode">模式：<span id="modeText">正常模式</span></div>
 
-    <div id="result" class="result">🤔</div>
-    <div id="visual" class="visual">🍽️ 等你決定</div>
+    <div id="result" class="result">按下面開始</div>
+    <div id="visual" class="visual">🍽️</div>
 
-    <button onclick="pickMeal()">幫我決定</button>
-    <button class="secondary" onclick="toggleMode()">切換模式</button>
-
-    <div class="hint">此版本不使用圖片、不連網，保證顯示</div>
+    <button id="pickBtn" class="primary">幫我決定</button>
+    <button id="toggleBtn" class="secondary">切換模式</button>
   </div>
 
   <script>
     const normalMeals = [
-      '滷肉飯','雞肉飯','排骨便當','炸雞腿便當','控肉飯',
-      '牛肉麵','麻醬麵','乾拌麵','拉麵','炒麵',
-      '水餃','鍋貼','鹹酥雞','雞排','蚵仔煎',
-      '咖哩飯','義大利麵','披薩','漢堡','丼飯',
-      '沙拉','涼麵','粥','地瓜','湯麵',
-      '泡麵','便利商店','外送','隨便吃'
+      '滷肉飯','雞肉飯','排骨便當','炸雞腿便當','牛肉麵','拉麵','咖哩飯','漢堡'
     ];
 
     const cheapMeals = [
-      '滷肉飯','雞肉飯','白飯＋滷汁','醬油拌飯','地瓜','吐司','饅頭',
-      '泡麵','乾拌麵','陽春麵','冬粉','米粉湯','粥','麵線',
-      '滷蛋','煎蛋','茶葉蛋','豆干','板豆腐','皮蛋豆腐',
-      '茶葉蛋＋飯糰','地瓜＋豆漿','關東煮','微波炒飯','打折便當',
-      '冷凍水餃','冷凍炒飯','昨天剩菜',
-      '多喝水','先睡覺','不吃了（騙自己）'
+      '泡麵','滷肉飯','吐司','地瓜','茶葉蛋','關東煮','冷凍水餃','多喝水'
     ];
 
     let mode = 'normal';
 
-    function toggleMode() {
-      mode = mode === 'normal' ? 'cheap' : 'normal';
-      document.getElementById('modeText').textContent = mode === 'normal' ? '正常模式' : '省錢模式';
-      document.getElementById('result').textContent = '🤔';
-      document.getElementById('visual').textContent = '🍽️ 等你決定';
-    }
+    const modeText = document.getElementById('modeText');
+    const result = document.getElementById('result');
+    const visual = document.getElementById('visual');
 
-    function pickMeal() {
+    document.getElementById('pickBtn').onclick = function () {
       const pool = mode === 'normal' ? normalMeals : cheapMeals;
       const meal = pool[Math.floor(Math.random() * pool.length)];
-      document.getElementById('result').textContent = meal;
-      document.getElementById('visual').textContent = '🍴 ' + meal;
-    }
+      result.textContent = meal;
+      visual.textContent = '🍴 ' + meal;
+    };
+
+    document.getElementById('toggleBtn').onclick = function () {
+      mode = mode === 'normal' ? 'cheap' : 'normal';
+      modeText.textContent = mode === 'normal' ? '正常模式' : '省錢模式';
+      result.textContent = '已切換模式';
+      visual.textContent = '🍽️';
+    };
   </script>
 </body>
 </html>
