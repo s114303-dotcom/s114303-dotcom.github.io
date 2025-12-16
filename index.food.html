@@ -41,9 +41,10 @@
       width: 100%;
       border-radius: 14px;
       margin: 10px 0 18px;
-      display: none;
+      display: block;
       object-fit: cover;
       height: 180px;
+      background: #f3f4f6;
     }
     button {
       width: 100%;
@@ -170,7 +171,7 @@
       mode = mode === 'normal' ? 'cheap' : 'normal';
       document.getElementById('modeText').textContent = mode === 'normal' ? '正常模式' : '省錢模式';
       document.getElementById('result').textContent = '🤔';
-      document.getElementById('mealImage').style.display = 'none';
+      document.getElementById('mealImage').style.display = 'block';
     }
 
     function pickMeal() {
@@ -183,6 +184,9 @@
       const keyword = key ? mealKeywords[key] : 'food';
 
       img.src = `https://source.unsplash.com/600x400/?${encodeURIComponent(keyword)}`;
+      img.onerror = () => {
+        img.src = 'https://source.unsplash.com/600x400/?food';
+      };
       img.style.display = 'block';
     }
   </script>
