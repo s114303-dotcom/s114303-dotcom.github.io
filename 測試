@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>JS 測試</title>
+</head>
+<body>
+  <h1 id="text">還沒點</h1>
+  <button id="btn">點我</button>
+
+  <script>
+    document.getElementById('btn').onclick = function () {
+      document.getElementById('text').textContent = '有反應了';
+      alert('JS 有在跑');
+    };
+  </script>
+</body>
+</html>
