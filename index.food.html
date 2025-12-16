@@ -18,18 +18,25 @@
       background: #fff;
       padding: 32px 28px 36px;
       border-radius: 20px;
-      width: 320px;
+      width: 340px;
       text-align: center;
       box-shadow: 0 10px 30px rgba(0,0,0,0.15);
     }
     h1 {
-      margin: 0 0 20px;
+      margin: 0 0 16px;
       font-size: 26px;
+    }
+    .mode {
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    .mode span {
+      font-weight: 600;
     }
     .result {
       font-size: 22px;
       font-weight: 600;
-      margin: 20px 0 28px;
+      margin: 18px 0 26px;
       min-height: 1.5em;
     }
     button {
@@ -44,13 +51,18 @@
       color: white;
       transition: transform 0.05s ease, box-shadow 0.05s ease;
       box-shadow: 0 6px 16px rgba(99,102,241,0.4);
+      margin-bottom: 10px;
+    }
+    button.secondary {
+      background: #e5e7eb;
+      color: #111;
+      box-shadow: none;
     }
     button:active {
       transform: translateY(1px);
-      box-shadow: 0 4px 10px rgba(99,102,241,0.35);
     }
     .hint {
-      margin-top: 18px;
+      margin-top: 10px;
       font-size: 13px;
       color: #666;
     }
@@ -59,26 +71,48 @@
 <body>
   <div class="card">
     <h1>今天吃什麼？</h1>
+
+    <div class="mode">
+      模式：<span id="modeText">正常模式</span>
+    </div>
+
     <div id="result" class="result">🤔</div>
+
     <button onclick="pickMeal()">幫我決定</button>
-    <div class="hint">重新整理或一直按都可以</div>
+    <button class="secondary" onclick="toggleMode()">切換模式</button>
+
+    <div class="hint">正常 / 省錢 模式可隨時切換</div>
   </div>
 
   <script>
-    // 👉 在這裡改成你自己的餐點清單
-    const meals = [
-  '滷肉飯','雞肉飯','排骨便當','炸雞腿便當','控肉飯',
-  '牛肉麵','麻醬麵','乾拌麵','拉麵','炒麵',
-  '水餃','鍋貼','鹹酥雞','雞排','蚵仔煎',
-  '咖哩飯','義大利麵','披薩','漢堡','丼飯',
-  '沙拉','涼麵','粥','地瓜','湯麵',
-  '泡麵','便利商店','外送','隨便吃'
-];
+    // ===== 餐點清單 =====
+    const normalMeals = [
+      '牛肉麵','拉麵','滷肉飯','雞肉飯','排骨便當','鍋貼','水餃',
+      '咖哩飯','義大利麵','披薩','漢堡','丼飯','火鍋','鹹酥雞'
+    ];
+
+    const cheapMeals = [
+      '滷肉飯','雞肉飯','白飯＋滷汁','醬油拌飯','地瓜','吐司','饅頭',
+      '泡麵','乾拌麵','陽春麵','冬粉','粥',
+      '茶葉蛋','煎蛋','豆腐',
+      '關東煮','打折便當',
+      '昨天剩菜','多喝水','先睡覺'
+    ];
+
+    // ===== 狀態 =====
+    let mode = 'normal'; // normal | cheap
+
+    function toggleMode() {
+      mode = mode === 'normal' ? 'cheap' : 'normal';
+      document.getElementById('modeText').textContent =
+        mode === 'normal' ? '正常模式' : '省錢模式';
+      document.getElementById('result').textContent = '🤔';
+    }
 
     function pickMeal() {
-      const resultEl = document.getElementById('result');
-      const randomIndex = Math.floor(Math.random() * meals.length);
-      resultEl.textContent = meals[randomIndex];
+      const pool = mode === 'normal' ? normalMeals : cheapMeals;
+      const randomIndex = Math.floor(Math.random() * pool.length);
+      document.getElementById('result').textContent = pool[randomIndex];
     }
   </script>
 </body>
