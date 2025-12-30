@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>今天吃什麼</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{margin:0;font-family:system-ui;background:#111;color:#fff;text-align:center}
+button{padding:10px 18px;margin:6px;font-size:16px;border:none;border-radius:8px;cursor:pointer}
+.primary{background:#4ade80;color:#000}
+.secondary{background:#60a5fa;color:#000}
+.danger{background:#f87171;color:#000}
+#result{margin-top:18px;font-size:26px}
+#foodImage{font-size:120px;margin-top:10px}
+#overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:999}
+#gameBox{position:relative}
+#flower{position:absolute;top:-50px;left:0;font-size:36px}
+#flowerText{position:absolute;top:-28px;left:48px;font-size:14px;text-align:left;width:260px}
+#timerDisplay{position:absolute;top:10px;right:10px;font-size:20px}
+canvas{background:#000;border:2px solid #fff}
+</style>
+</head>
+<body>
+
+<h1>🍽 今天吃什麼</h1>
+
+<button id="modeBtn" class="secondary">模式：正常</button><br>
+<button id="pickBtn" class="primary">幫我決定</button>
+<button id="funBtn" class="danger">More Fun</button>
+
+<div id="result"></div>
+<div id="foodImage">🍴</div>
+
+<!-- More Fun overlay -->
+<div id="overlay">
+  <div id="gameBox">
+    <div id="flower">🌼</div>
+    <div id="flowerText"></div>
+    <div id="timerDisplay">撐了 0 秒</div>
+    <canvas id="game" width="360" height="480"></canvas>
+  </div>
+</div>
+
+<script>
+/* ================== 餐點 ================== */
+const normalFoods=[
+'滷肉飯','雞肉飯','排骨便當','炸雞腿便當','控肉飯',
+'牛肉麵','麻醬麵','乾拌麵','拉麵','炒麵',
+'水餃','鍋貼','鹹酥雞','雞排','蚵仔煎',
+'咖哩飯','義大利麵','披薩','漢堡','丼飯',
+'沙拉','涼麵','粥','地瓜','湯麵',
+'泡麵','便利商店','外送','隨便吃',
+'茶葉蛋','饅頭','水'
+];
+
+const cheapFoods=[
+'滷肉飯','雞肉飯','白飯＋滷汁','醬油拌飯','地瓜','吐司','饅頭',
+'泡麵','乾拌麵','陽春麵','冬粉','米粉湯','粥','麵線',
+'滷蛋','煎蛋','茶葉蛋','豆干','板豆腐','皮蛋豆腐',
+'茶葉蛋＋飯糰','地瓜＋豆漿','關東煮','微波炒飯','打折便當',
+'冷凍水餃','冷凍炒飯','昨天剩菜',
+'多喝水','先睡覺','不吃了（騙自己）'
+];
+
+const rewardFoods=['牛排','龍蝦','海膽'];
+const punishFoods=['吃屎','吃土','吃自己'];
+
+const emojiMap={
+  飯:'🍚',麵:'🍜',雞:'🍗',牛:'🥩',披薩:'🍕',漢堡:'🍔',
+  水餃:'🥟',地瓜:'🍠',吐司:'🍞',便當:'🍱',
+  茶葉蛋:'🥚',饅頭:'🥟',水:'💧'
+};
+
+/* ================== 元素抓取 ================== */
+const resultEl = document.getElementById('result');
+const imgEl = document.getElementById('foodImage');
+const modeBtn = document.getElementById('modeBtn');
+const pickBtn = document.getElementById('pickBtn');
+const funBtn = document.getElementById('funBtn');
+const overlay = document.getElementById('overlay');
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const flowerText = document.getElementById('flowerText');
+const timerDisplay = document.getElementById('timerDisplay');
+
+/* ================== 主功能 ================== */
+let mode='normal';
+
+modeBtn.onclick=()=>{
+  mode=mode==='normal'?'cheap':'normal';
+  modeBtn.textContent='模式：'+(mode==='normal'?'正常':'省錢');
+};
+
+pickBtn.onclick=()=>pickFood();
+
+function pickFood(food){
+  if(!food){
+    const list=mode==='normal'?normalFoods:cheapFoods;
+    food=list[Math.floor(Math.random()*list.length)];
+  }
+
+  let e='🍴';
+  if(punishFoods.includes(food)){
+    if(food==='吃屎') e='💩';
+    else if(food==='吃自己') e='👱‍♂️';
+    else if(food==='吃土') e='🟫';
+  } else {
+    for(const k in emojiMap) if(food.includes(k)) e=emojiMap[k];
+  }
+
+  resultEl.textContent = `${e} ${food}`;
+  imgEl.textContent = e;
+}
+
+/* ================== More Fun ================== */
+let moreFunTimer = 0;
+let timerInterval = null;
+let playing = false;
+
+/* 遊戲物件 */
+const BASE_SPEED = 3;
+let speedBoost = 0;
+let paddle={x:140,y:450,w:80,h:10};
+let ball={x:180,y:260,r:8,vx:BASE_SPEED,vy:BASE_SPEED};
+
+funBtn.onclick = () => {
+  overlay.style.display = 'flex';
+  flowerText.textContent = '撐住 30 秒就贏！';
+  resetGame();
+  playing = true;
+  startTimer();
+  requestAnimationFrame(loop);
+};
+
+overlay.onmousemove = e => {
+  const r=canvas.getBoundingClientRect();
+  paddle.x=e.clientX-r.left-paddle.w/2;
+};
+
+/* 重置遊戲 */
+function resetGame(){
+  speedBoost = 0;
+  ball.x = 180;
+  ball.y = 260;
+  ball.vx = BASE_SPEED;
+  ball.vy = BASE_SPEED;
+}
+
+/* 計時器 */
+function startTimer() {
+  moreFunTimer = 0;
+  timerDisplay.textContent = '撐了 0 秒';
+  timerInterval = setInterval(() => {
+    moreFunTimer++;
+    timerDisplay.textContent = `撐了 ${moreFunTimer} 秒`;
+    if (moreFunTimer >= 30) {
+      clearInterval(timerInterval);
+      winGame();
+    }
+  }, 1000);
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  moreFunTimer = 0;
+  timerDisplay.textContent = '撐了 0 秒';
+}
+
+/* 遊戲主迴圈 - 修正版碰撞 */
+function loop(){
+  if(!playing) return;
+  ctx.clearRect(0,0,360,480);
+
+  ball.x += ball.vx;
+  ball.y += ball.vy;
+
+  if(ball.x<ball.r || ball.x>360-ball.r) ball.vx*=-1;
+  if(ball.y<ball.r) ball.vy*=-1;
+
+  if(ball.vy > 0){
+    if(ball.y + ball.r >= paddle.y && ball.y - ball.r <= paddle.y + paddle.h &&
+       ball.x + ball.r >= paddle.x && ball.x - ball.r <= paddle.x + paddle.w){
+      ball.vy*=-1;
+      speedBoost += 0.3;
+      ball.vx = Math.sign(ball.vx)*(BASE_SPEED+speedBoost);
+      ball.vy = Math.sign(ball.vy)*(BASE_SPEED+speedBoost);
+      ball.y = paddle.y - ball.r;
+    }
+  }
+
+  if(ball.y>480){
+    gameOver();
+    return;
+  }
+
+  ctx.fillStyle='#fff';
+  ctx.beginPath();
+  ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2);
+  ctx.fill();
+  ctx.fillRect(paddle.x,paddle.y,paddle.w,paddle.h);
+
+  requestAnimationFrame(loop);
+}
+
+/* 遊戲結束 */
+function gameOver(){
+  playing=false;
+  stopTimer();
+  const f=punishFoods[Math.floor(Math.random()*punishFoods.length)];
+  flowerText.textContent='哈哈哈哈哈，我沒有手玩得都你好';
+  pickFood(f);
+  setTimeout(()=>overlay.style.display='none',1500);
+}
+
+function winGame(){
+  playing=false;
+  stopTimer();
+  const f=rewardFoods[Math.floor(Math.random()*rewardFoods.length)];
+  flowerText.textContent='你勝利了！';
+  pickFood(f);
+  setTimeout(()=>overlay.style.display='none',1500);
+}
+</script>
+</body>
+</html>
