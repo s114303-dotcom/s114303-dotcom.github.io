@@ -58,13 +58,17 @@ const cheapFoods=[
 '滷蛋','煎蛋','茶葉蛋','豆干','板豆腐','皮蛋豆腐',
 '茶葉蛋＋飯糰','地瓜＋豆漿','關東煮','微波炒飯','打折便當',
 '冷凍水餃','冷凍炒飯','昨天剩菜',
-'多喝水','先睡覺','不吃了（騙自己）'
+'多喝水','先睡覺','不吃了（騙自己）','茶葉蛋','饅頭','水'
 ];
 
 const rewardFoods=['牛排','龍蝦','海膽'];
 const punishFoods=['吃屎','吃土','吃自己'];
 
-const emojiMap={飯:'🍚',麵:'🍜',雞:'🍗',牛:'🥩',披薩:'🍕',漢堡:'🍔',水餃:'🥟',地瓜:'🍠',吐司:'🍞',便當:'🍱'};
+const emojiMap={
+  飯:'🍚',麵:'🍜',雞:'🍗',牛:'🥩',披薩:'🍕',漢堡:'🍔',
+  水餃:'🥟',地瓜:'🍠',吐司:'🍞',便當:'🍱',
+  茶葉蛋:'🥚',饅頭:'🥟',水:'💧'
+};
 
 /* ================== 主功能 ================== */
 let mode='normal';
@@ -83,11 +87,20 @@ function pickFood(food){
     const list=mode==='normal'?normalFoods:cheapFoods;
     food=list[Math.floor(Math.random()*list.length)];
   }
-  // 自動加 emoji
+
+  // 判斷 emoji
   let e='🍴';
-  for(const k in emojiMap) if(food.includes(k)) e=emojiMap[k];
+
+  if(punishFoods.includes(food)){
+    if(food==='吃屎') e='💩';
+    else if(food==='吃自己') e='👱‍♂️';
+    else if(food==='吃土') e='🟫';
+  } else {
+    for(const k in emojiMap) if(food.includes(k)) e=emojiMap[k];
+  }
+
   resultEl.textContent = `${e} ${food}`;
-  imgEl.textContent=e;
+  imgEl.textContent = e;
 }
 
 /* ================== More Fun ================== */
@@ -160,23 +173,21 @@ function loop(){
   ball.x += ball.vx;
   ball.y += ball.vy;
 
-  // 左右牆碰撞
   if(ball.x<ball.r || ball.x>360-ball.r) ball.vx*=-1;
   if(ball.y<ball.r) ball.vy*=-1;
 
-  // 碰板子 (修正版，防穿透)
-  if(ball.vy > 0){ // 只檢查向下
+  // 碰板子修正穿透
+  if(ball.vy > 0){
     if(ball.y + ball.r >= paddle.y && ball.y - ball.r <= paddle.y + paddle.h &&
        ball.x + ball.r >= paddle.x && ball.x - ball.r <= paddle.x + paddle.w){
       ball.vy*=-1;
       speedBoost += 0.3;
       ball.vx = Math.sign(ball.vx)*(BASE_SPEED+speedBoost);
       ball.vy = Math.sign(ball.vy)*(BASE_SPEED+speedBoost);
-      ball.y = paddle.y - ball.r; // 修正穿透
+      ball.y = paddle.y - ball.r;
     }
   }
 
-  // 球掉落遊戲結束
   if(ball.y>480){
     gameOver();
     return;
@@ -197,7 +208,7 @@ function gameOver(){
   playing=false;
   stopTimer();
   const f=punishFoods[Math.floor(Math.random()*punishFoods.length)];
-  flowerText.textContent='你失敗了！';
+  flowerText.textContent='哈哈哈哈哈，我沒有手玩得都你好';
   pickFood(f);
   setTimeout(()=>overlay.style.display='none',1500);
 }
