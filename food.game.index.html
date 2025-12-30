@@ -66,29 +66,10 @@ const rewardFoods=['牛排','龍蝦','海膽'];
 const punishFoods=['吃屎','吃土','吃自己'];
 
 const emojiMap={
-  飯:'🍚',
-  麵:'🍜',
-  雞:'🍗',
-  牛:'🥩',
-  披薩:'🍕',
-  漢堡:'🍔',
-  水餃:'🥟',
-  地瓜:'🍠',
-  吐司:'🍞',
-  便當:'🍱',
-  茶葉蛋:'🥚',
-  饅頭:'🥟',
-  水:'💧',
-  沙拉:'🥗',
-  滷蛋:'🥚',
-  豆干:'🟫',
-  冬粉:'🍜',
-  板豆腐:'⬜',
-  冷凍水餃:'🥟',
-  皮蛋豆腐:'⬛',
-  先睡覺:'💤',
-  不吃了:'❌',
-  粥:'🍚'
+  飯:'🍚', 麵:'🍜', 雞:'🍗', 牛:'🥩', 披薩:'🍕', 漢堡:'🍔',
+  水餃:'🥟', 地瓜:'🍠', 吐司:'🍞', 便當:'🍱', 茶葉蛋:'🥚', 饅頭:'🥟', 水:'💧',
+  沙拉:'🥗', 滷蛋:'🥚', 豆干:'🟫', 冬粉:'🍜', 板豆腐:'⬜', 冷凍水餃:'🥟', 皮蛋豆腐:'⬛',
+  先睡覺:'💤', 不吃了:'❌', 粥:'🍚'
 };
 
 /* ================== 元素抓取 ================== */
@@ -138,7 +119,7 @@ let timerInterval = null;
 let playing = false;
 
 /* 遊戲物件 */
-const BASE_SPEED = 3;
+const BASE_SPEED = 6; // 球速提高
 let speedBoost = 0;
 let paddle={x:140,y:450,w:80,h:10};
 let ball={x:180,y:260,r:8,vx:BASE_SPEED,vy:BASE_SPEED};
@@ -177,18 +158,10 @@ function startTimer() {
     timerDisplay.textContent = `撐了 ${moreFunTimer} 秒`;
     if (moreFunTimer >= 30) {
       clearInterval(timerInterval);
-      winGame();
+      timerInterval = null;
+      winGame(false); // 勝利時不重置秒數
     }
   }, 1000);
-}
-
-function stopTimer(resetDisplay = false) {
-  clearInterval(timerInterval);
-  timerInterval = null;
-  if(resetDisplay){
-    moreFunTimer = 0;
-    timerDisplay.textContent = '撐了 0 秒';
-  }
 }
 
 /* 遊戲主迴圈 - 修正版碰撞 */
@@ -206,7 +179,7 @@ function loop(){
     if(ball.y + ball.r >= paddle.y && ball.y - ball.r <= paddle.y + paddle.h &&
        ball.x + ball.r >= paddle.x && ball.x - ball.r <= paddle.x + paddle.w){
       ball.vy*=-1;
-      speedBoost += 0.3;
+      speedBoost += 0.6; // 加速更快
       ball.vx = Math.sign(ball.vx)*(BASE_SPEED+speedBoost);
       ball.vy = Math.sign(ball.vy)*(BASE_SPEED+speedBoost);
       ball.y = paddle.y - ball.r;
@@ -230,16 +203,24 @@ function loop(){
 /* 遊戲結束 */
 function gameOver(){
   playing=false;
-  stopTimer(false); // 不歸零顯示
+  clearInterval(timerInterval); // 停止計時器，但不重置秒數
+  timerInterval = null;
+
   const f=punishFoods[Math.floor(Math.random()*punishFoods.length)];
   flowerText.textContent='哈哈哈哈哈，我沒有手玩得都你好';
   pickFood(f);
   setTimeout(()=>overlay.style.display='none',1500);
 }
 
-function winGame(){
+/* 勝利 */
+function winGame(resetDisplay = true){
   playing=false;
-  stopTimer(true); // 勝利時重置
+  if(resetDisplay){
+    clearInterval(timerInterval);
+    timerInterval = null;
+    moreFunTimer = 0;
+    timerDisplay.textContent = '撐了 0 秒';
+  }
   const f=rewardFoods[Math.floor(Math.random()*rewardFoods.length)];
   flowerText.textContent='你勝利了！';
   pickFood(f);
