@@ -1,67 +1,197 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <title>今天吃什麼</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont;
-      background: #111;
-      color: #fff;
-      text-align: center;
-    }
-    h1 { margin-top: 20px; }
+<meta charset="UTF-8">
+<title>今天吃什麼</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{margin:0;font-family:system-ui;background:#111;color:#fff;text-align:center}
+button{padding:10px 18px;margin:6px;font-size:16px;border:none;border-radius:8px;cursor:pointer}
+.primary{background:#4ade80;color:#000}
+.secondary{background:#60a5fa;color:#000}
+.danger{background:#f87171;color:#000}
+#result{margin-top:18px;font-size:26px}
+#foodImage{font-size:120px;margin-top:10px}
+#overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:999}
+#gameBox{position:relative}
+#flower{position:absolute;top:-50px;left:0;font-size:36px}
+#flowerText{position:absolute;top:-28px;left:48px;font-size:14px;text-align:left;width:260px}
+canvas{background:#000;border:2px solid #fff}
+</style>
+</head>
+<body>
 
-    button {
-      padding: 10px 18px;
-      margin: 8px;
-      font-size: 16px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
+<h1>🍽 今天吃什麼</h1>
 
-    .primary { background: #4ade80; color: #000; }
-    .secondary { background: #60a5fa; color: #000; }
-    .danger { background: #f87171; color: #000; }
+<button id="modeBtn" class="secondary">模式：正常</button><br>
+<button id="pickBtn" class="primary">幫我決定</button>
+<button id="funBtn" class="danger">More Fun</button>
 
-    #result {
-      margin-top: 20px;
-      font-size: 26px;
-      min-height: 40px;
-    }
+<div id="result"></div>
+<div id="foodImage">🍴</div>
 
-    #foodImage {
-      margin-top: 16px;
-      font-size: 120px;
-    }
+<!-- More Fun -->
+<div id="overlay">
+  <div id="gameBox">
+    <div id="flower">🌼</div>
+    <div id="flowerText"></div>
+    <canvas id="game" width="360" height="480"></canvas>
+  </div>
+</div>
 
-    /* overlay */
-    #overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.85);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 999;
-    }
+<script>
+/* ================== 餐點 ================== */
+const normalFoods=[
+'滷肉飯','雞肉飯','排骨便當','炸雞腿便當','控肉飯',
+'牛肉麵','麻醬麵','乾拌麵','拉麵','炒麵',
+'水餃','鍋貼','鹹酥雞','雞排','蚵仔煎',
+'咖哩飯','義大利麵','披薩','漢堡','丼飯',
+'沙拉','涼麵','粥','地瓜','湯麵',
+'泡麵','便利商店','外送','隨便吃'
+];
 
-    #gameBox {
-      background: #000;
-      border: 2px solid #fff;
-      position: relative;
-    }
+const cheapFoods=[
+'滷肉飯','雞肉飯','白飯＋滷汁','醬油拌飯','地瓜','吐司','饅頭',
+'泡麵','乾拌麵','陽春麵','冬粉','米粉湯','粥','麵線',
+'滷蛋','煎蛋','茶葉蛋','豆干','板豆腐','皮蛋豆腐',
+'茶葉蛋＋飯糰','地瓜＋豆漿','關東煮','微波炒飯','打折便當',
+'冷凍水餃','冷凍炒飯','昨天剩菜',
+'多喝水','先睡覺','不吃了（騙自己）'
+];
 
-    #flower {
-      position: absolute;
-      top: -60px;
-      left: 10px;
-      font-size: 36px;
-    }
+const rewardFoods=['牛排','龍蝦','海膽'];
+const punishFoods=['吃屎','吃土','吃自己'];
 
+const emojiMap={飯:'🍚',麵:'🍜',雞:'🍗',牛:'🥩',披薩:'🍕',漢堡:'🍔',水餃:'🥟',地瓜:'🍠',吐司:'🍞',便當:'🍱'};
+
+/* ================== 主功能 ================== */
+let mode='normal';
+const resultEl=result;
+const imgEl=foodImage;
+
+modeBtn.onclick=()=>{
+  mode=mode==='normal'?'cheap':'normal';
+  modeBtn.textContent='模式：'+(mode==='normal'?'正常':'省錢');
+};
+
+pickBtn.onclick=()=>pickFood();
+
+function pickFood(food){
+  if(!food){
+    const list=mode==='normal'?normalFoods:cheapFoods;
+    food=list[Math.floor(Math.random()*list.length)];
+  }
+  resultEl.textContent=food;
+  let e='🍴';
+  for(const k in emojiMap) if(food.includes(k)) e=emojiMap[k];
+  imgEl.textContent=e;
+}
+
+/* ================== More Fun ================== */
+const overlay=document.getElementById('overlay');
+const canvas=document.getElementById('game');
+const ctx=canvas.getContext('2d');
+const flowerText=document.getElementById('flowerText');
+
+const BASE_SPEED = 3;
+let speedBoost = 0;
+let time = 0;
+let playing = false;
+let taught = false;
+
+let paddle={x:140,y:450,w:80,h:10};
+let ball={x:180,y:200,r:8,vx:BASE_SPEED,vy:BASE_SPEED};
+
+const taunts=['耶哈哈哈！','就這？','你在抖嗎？'];
+const winTexts=['我教得很好吧？','不錯嘛～'];
+const loseTexts=['哈哈哈！','太弱了吧'];
+
+funBtn.onclick=()=>{
+  overlay.style.display='flex';
+  flowerText.textContent = taught
+    ? taunts[Math.floor(Math.random()*taunts.length)]
+    : '看到球了嗎？移動滑鼠擋住它';
+  taught = true;
+  resetGame();
+  playing = true;
+  requestAnimationFrame(loop);
+};
+
+overlay.onmousemove=e=>{
+  const r=canvas.getBoundingClientRect();
+  paddle.x=e.clientX-r.left-paddle.w/2;
+};
+
+function resetGame(){
+  time = 0;
+  speedBoost = 0;
+  ball.x = 180;
+  ball.y = 200;
+  ball.vx = BASE_SPEED;
+  ball.vy = BASE_SPEED;
+}
+
+function loop(){
+  if(!playing) return;
+  ctx.clearRect(0,0,360,480);
+  time++;
+
+  /* 局內加速：每 3 秒 */
+  if(time % 180 === 0){
+    speedBoost += 0.6;
+    ball.vx = Math.sign(ball.vx) * (BASE_SPEED + speedBoost);
+    ball.vy = Math.sign(ball.vy) * (BASE_SPEED + speedBoost);
+  }
+
+  ball.x += ball.vx;
+  ball.y += ball.vy;
+
+  if(ball.x<ball.r||ball.x>360-ball.r) ball.vx*=-1;
+  if(ball.y<ball.r) ball.vy*=-1;
+
+  if(ball.y+ball.r>paddle.y &&
+     ball.x>paddle.x &&
+     ball.x<paddle.x+paddle.w){
+    ball.vy*=-1;
+  }
+
+  if(ball.y>480){
+    gameOver();
+    return;
+  }
+
+  if(time>600){
+    winGame();
+    return;
+  }
+
+  ctx.fillStyle='#fff';
+  ctx.beginPath();
+  ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2);
+  ctx.fill();
+  ctx.fillRect(paddle.x,paddle.y,paddle.w,paddle.h);
+
+  requestAnimationFrame(loop);
+}
+
+function gameOver(){
+  playing=false;
+  const f=punishFoods[Math.floor(Math.random()*punishFoods.length)];
+  flowerText.textContent=loseTexts[Math.floor(Math.random()*loseTexts.length)];
+  pickFood(f);
+  setTimeout(()=>overlay.style.display='none',1500);
+}
+
+function winGame(){
+  playing=false;
+  const f=rewardFoods[Math.floor(Math.random()*rewardFoods.length)];
+  flowerText.textContent=winTexts[Math.floor(Math.random()*winTexts.length)];
+  pickFood(f);
+  setTimeout(()=>overlay.style.display='none',1500);
+}
+</script>
+</body>
+</html>
     #flowerText {
       position: absolute;
       top: -30px;
