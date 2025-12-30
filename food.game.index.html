@@ -31,7 +31,7 @@ canvas{background:#000;border:2px solid #fff}
 <div id="result"></div>
 <div id="foodImage">🍴</div>
 
-<!-- More Fun -->
+<!-- More Fun overlay -->
 <div id="overlay">
   <div id="gameBox">
     <div id="flower">🌼</div>
@@ -83,9 +83,10 @@ function pickFood(food){
     const list=mode==='normal'?normalFoods:cheapFoods;
     food=list[Math.floor(Math.random()*list.length)];
   }
-  resultEl.textContent=food;
+  // 自動加 emoji
   let e='🍴';
   for(const k in emojiMap) if(food.includes(k)) e=emojiMap[k];
+  resultEl.textContent = `${e} ${food}`;
   imgEl.textContent=e;
 }
 
@@ -100,6 +101,12 @@ let moreFunTimer = 0;
 let timerInterval = null;
 let playing = false;
 
+/* 遊戲物件 */
+const BASE_SPEED = 3;
+let speedBoost = 0;
+let paddle={x:140,y:450,w:80,h:10};
+let ball={x:180,y:260,r:8,vx:BASE_SPEED,vy:BASE_SPEED};
+
 funBtn.onclick = () => {
   overlay.style.display = 'flex';
   flowerText.textContent = '撐住 30 秒就贏！';
@@ -109,16 +116,10 @@ funBtn.onclick = () => {
   requestAnimationFrame(loop);
 };
 
-overlay.onmousemove=e=>{
+overlay.onmousemove = e => {
   const r=canvas.getBoundingClientRect();
   paddle.x=e.clientX-r.left-paddle.w/2;
 };
-
-/* ======== 遊戲物件 ======== */
-const BASE_SPEED = 3;
-let speedBoost = 0;
-let paddle={x:140,y:450,w:80,h:10};
-let ball={x:180,y:260,r:8,vx:BASE_SPEED,vy:BASE_SPEED};
 
 /* 重置遊戲 */
 function resetGame(){
@@ -129,7 +130,7 @@ function resetGame(){
   ball.vy = BASE_SPEED;
 }
 
-/* 計時器功能 */
+/* 計時器 */
 function startTimer() {
   moreFunTimer = 0;
   timerDisplay.textContent = '撐了 0 秒';
@@ -138,7 +139,6 @@ function startTimer() {
     timerDisplay.textContent = `撐了 ${moreFunTimer} 秒`;
     if (moreFunTimer >= 30) {
       clearInterval(timerInterval);
-      alert('恭喜！你撐過 30 秒，勝利！');
       winGame();
     }
   }, 1000);
@@ -151,7 +151,7 @@ function stopTimer() {
   timerDisplay.textContent = '撐了 0 秒';
 }
 
-/* 遊戲主迴圈（只讓球反彈，不再勝利判定） */
+/* 遊戲主迴圈 - 修正版碰撞 */
 function loop(){
   if(!playing) return;
   ctx.clearRect(0,0,360,480);
@@ -159,13 +159,21 @@ function loop(){
   // 球運動
   ball.x += ball.vx;
   ball.y += ball.vy;
-  if(ball.x<ball.r||ball.x>360-ball.r) ball.vx*=-1;
+
+  // 左右牆碰撞
+  if(ball.x<ball.r || ball.x>360-ball.r) ball.vx*=-1;
   if(ball.y<ball.r) ball.vy*=-1;
-  if(ball.y+ball.r>paddle.y && ball.x>paddle.x && ball.x<paddle.x+paddle.w){
-    ball.vy*=-1;
-    speedBoost += 0.3;
-    ball.vx = Math.sign(ball.vx)*(BASE_SPEED+speedBoost);
-    ball.vy = Math.sign(ball.vy)*(BASE_SPEED+speedBoost);
+
+  // 碰板子 (修正版，防穿透)
+  if(ball.vy > 0){ // 只檢查向下
+    if(ball.y + ball.r >= paddle.y && ball.y - ball.r <= paddle.y + paddle.h &&
+       ball.x + ball.r >= paddle.x && ball.x - ball.r <= paddle.x + paddle.w){
+      ball.vy*=-1;
+      speedBoost += 0.3;
+      ball.vx = Math.sign(ball.vx)*(BASE_SPEED+speedBoost);
+      ball.vy = Math.sign(ball.vy)*(BASE_SPEED+speedBoost);
+      ball.y = paddle.y - ball.r; // 修正穿透
+    }
   }
 
   // 球掉落遊戲結束
@@ -184,6 +192,7 @@ function loop(){
   requestAnimationFrame(loop);
 }
 
+/* 遊戲結束 */
 function gameOver(){
   playing=false;
   stopTimer();
