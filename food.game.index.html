@@ -31,7 +31,6 @@ canvas{background:#000;border:2px solid #fff}
 <div id="result"></div>
 <div id="foodImage">🍴</div>
 
-<!-- More Fun overlay -->
 <div id="overlay">
   <div id="gameBox">
     <div id="flower">🌼</div>
@@ -42,51 +41,53 @@ canvas{background:#000;border:2px solid #fff}
 </div>
 
 <script>
-/* ================== 餐點 ================== */
+/* ========= 餐點 ========= */
 const normalFoods=[
 '滷肉飯','雞肉飯','排骨便當','炸雞腿便當','控肉飯',
 '牛肉麵','麻醬麵','乾拌麵','拉麵','炒麵',
 '水餃','鍋貼','鹹酥雞','雞排','蚵仔煎',
 '咖哩飯','義大利麵','披薩','漢堡','丼飯',
-'沙拉','涼麵','粥','地瓜','湯麵',
-'泡麵','便利商店','外送','隨便吃',
-'茶葉蛋','饅頭','水','滷蛋','豆干','冬粉','板豆腐','冷凍水餃','皮蛋豆腐','先睡覺','不吃了'
+'沙拉','涼麵','粥','地瓜','湯麵','泡麵',
+'茶葉蛋','饅頭','水','滷蛋','豆干','冬粉',
+'板豆腐','冷凍水餃','皮蛋豆腐','先睡覺','不吃了'
 ];
 
-const cheapFoods=[
-'滷肉飯','雞肉飯','白飯＋滷汁','醬油拌飯','地瓜','吐司','饅頭',
-'泡麵','乾拌麵','陽春麵','冬粉','米粉湯','粥','麵線',
-'滷蛋','煎蛋','茶葉蛋','豆干','板豆腐','皮蛋豆腐',
-'茶葉蛋＋飯糰','地瓜＋豆漿','關東煮','微波炒飯','打折便當',
-'冷凍水餃','冷凍炒飯','昨天剩菜',
-'多喝水','先睡覺','不吃了（騙自己）'
-];
-
+const cheapFoods=[...normalFoods];
 const rewardFoods=['牛排','龍蝦','海膽'];
 const punishFoods=['吃屎','吃土','吃自己'];
 
 const emojiMap={
-  飯:'🍚', 麵:'🍜', 雞:'🍗', 牛:'🥩', 披薩:'🍕', 漢堡:'🍔',
-  水餃:'🥟', 地瓜:'🍠', 吐司:'🍞', 便當:'🍱', 茶葉蛋:'🥚', 饅頭:'🥟', 水:'💧',
-  沙拉:'🥗', 滷蛋:'🥚', 豆干:'🟫', 冬粉:'🍜', 板豆腐:'⬜', 冷凍水餃:'🥟', 皮蛋豆腐:'⬛',
-  先睡覺:'💤', 不吃了:'❌', 粥:'🍚'
+飯:'🍚',麵:'🍜',雞:'🍗',牛:'🥩',披薩:'🍕',漢堡:'🍔',
+水餃:'🥟',地瓜:'🍠',吐司:'🍞',便當:'🍱',
+茶葉蛋:'🥚',滷蛋:'🥚',饅頭:'🥟',水:'💧',
+沙拉:'🥗',豆干:'🟫',冬粉:'🍜',板豆腐:'⬜',
+冷凍水餃:'🥟',皮蛋豆腐:'⬛',先睡覺:'💤',不吃了:'❌',粥:'🍚'
 };
 
-/* ================== 元素抓取 ================== */
-const resultEl = document.getElementById('result');
-const imgEl = document.getElementById('foodImage');
-const modeBtn = document.getElementById('modeBtn');
-const pickBtn = document.getElementById('pickBtn');
-const funBtn = document.getElementById('funBtn');
-const overlay = document.getElementById('overlay');
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
-const flowerText = document.getElementById('flowerText');
-const timerDisplay = document.getElementById('timerDisplay');
+/* ========= 嘲諷文字 ========= */
+const loseTaunts=[
+'再一次！我想再看你輸一次',
+'你很爛欸！',
+'我沒有手都玩得比你好',
+'蝸牛都比你快',
+'我都還來不及睡覺你就輸了'
+];
 
-/* ================== 主功能 ================== */
+/* ========= 元素 ========= */
+const resultEl=result;
+const imgEl=foodImage;
+const modeBtn=document.getElementById('modeBtn');
+const pickBtn=document.getElementById('pickBtn');
+const funBtn=document.getElementById('funBtn');
+const overlay=document.getElementById('overlay');
+const canvas=document.getElementById('game');
+const ctx=canvas.getContext('2d');
+const flowerText=document.getElementById('flowerText');
+const timerDisplay=document.getElementById('timerDisplay');
+
 let mode='normal';
 
+/* ========= 主功能 ========= */
 modeBtn.onclick=()=>{
   mode=mode==='normal'?'cheap':'normal';
   modeBtn.textContent='模式：'+(mode==='normal'?'正常':'省錢');
@@ -101,129 +102,95 @@ function pickFood(food){
   }
 
   let e='🍴';
-  if(punishFoods.includes(food)){
-    if(food==='吃屎') e='💩';
-    else if(food==='吃自己') e='👱‍♂️';
-    else if(food==='吃土') e='🟫';
-  } else {
-    for(const k in emojiMap) if(food.includes(k)) e=emojiMap[k];
-  }
+  if(food==='吃屎') e='💩';
+  else if(food==='吃土') e='🟫';
+  else if(food==='吃自己') e='👱‍♂️';
+  else for(const k in emojiMap) if(food.includes(k)) e=emojiMap[k];
 
-  resultEl.textContent = `${e} ${food}`;
-  imgEl.textContent = e;
+  resultEl.textContent=`${e} ${food}`;
+  imgEl.textContent=e;
 }
 
-/* ================== More Fun ================== */
-let moreFunTimer = 0;
-let timerInterval = null;
-let playing = false;
-
-/* 遊戲物件 */
-const BASE_SPEED = 6; // 球速提高
-let speedBoost = 0;
+/* ========= More Fun ========= */
+let timer=0,timerInt=null,playing=false;
+const BASE_SPEED=6;
+let speedBoost=0;
 let paddle={x:140,y:450,w:80,h:10};
 let ball={x:180,y:260,r:8,vx:BASE_SPEED,vy:BASE_SPEED};
 
-funBtn.onclick = () => {
-  overlay.style.display = 'flex';
-  flowerText.textContent = '撐住 30 秒就贏！';
+funBtn.onclick=()=>{
+  overlay.style.display='flex';
+  flowerText.textContent='勝利條件：活30秒，快點，我要下班';
   resetGame();
-  playing = true;
   startTimer();
+  playing=true;
   requestAnimationFrame(loop);
 };
 
-overlay.onmousemove = e => {
+overlay.onmousemove=e=>{
   const r=canvas.getBoundingClientRect();
   paddle.x=e.clientX-r.left-paddle.w/2;
 };
 
-/* 重置遊戲 */
 function resetGame(){
-  speedBoost = 0;
-  ball.x = 180;
-  ball.y = 260;
-  ball.vx = BASE_SPEED;
-  ball.vy = BASE_SPEED;
-  moreFunTimer = 0;
-  timerDisplay.textContent = '撐了 0 秒';
+  speedBoost=0;
+  ball.x=180; ball.y=260;
+  ball.vx=BASE_SPEED; ball.vy=BASE_SPEED;
+  timer=0;
+  timerDisplay.textContent='撐了 0 秒';
 }
 
-/* 計時器 */
-function startTimer() {
-  moreFunTimer = 0;
-  timerDisplay.textContent = '撐了 0 秒';
-  timerInterval = setInterval(() => {
-    moreFunTimer++;
-    timerDisplay.textContent = `撐了 ${moreFunTimer} 秒`;
-    if (moreFunTimer >= 30) {
-      clearInterval(timerInterval);
-      timerInterval = null;
-      winGame(false); // 勝利時不重置秒數
+function startTimer(){
+  timerInt=setInterval(()=>{
+    timer++;
+    timerDisplay.textContent=`撐了 ${timer} 秒`;
+    if(timer>=30){
+      clearInterval(timerInt);
+      winGame();
     }
-  }, 1000);
+  },1000);
 }
 
-/* 遊戲主迴圈 - 修正版碰撞 */
 function loop(){
   if(!playing) return;
   ctx.clearRect(0,0,360,480);
 
-  ball.x += ball.vx;
-  ball.y += ball.vy;
-
-  if(ball.x<ball.r || ball.x>360-ball.r) ball.vx*=-1;
+  ball.x+=ball.vx; ball.y+=ball.vy;
+  if(ball.x<ball.r||ball.x>360-ball.r) ball.vx*=-1;
   if(ball.y<ball.r) ball.vy*=-1;
 
-  if(ball.vy > 0){
-    if(ball.y + ball.r >= paddle.y && ball.y - ball.r <= paddle.y + paddle.h &&
-       ball.x + ball.r >= paddle.x && ball.x - ball.r <= paddle.x + paddle.w){
-      ball.vy*=-1;
-      speedBoost += 0.6; // 加速更快
-      ball.vx = Math.sign(ball.vx)*(BASE_SPEED+speedBoost);
-      ball.vy = Math.sign(ball.vy)*(BASE_SPEED+speedBoost);
-      ball.y = paddle.y - ball.r;
-    }
+  if(ball.vy>0 &&
+     ball.y+ball.r>=paddle.y &&
+     ball.x>paddle.x &&
+     ball.x<paddle.x+paddle.w){
+    ball.vy*=-1;
+    speedBoost+=0.6;
+    ball.vx=Math.sign(ball.vx)*(BASE_SPEED+speedBoost);
+    ball.vy=Math.sign(ball.vy)*(BASE_SPEED+speedBoost);
+    ball.y=paddle.y-ball.r;
   }
 
-  if(ball.y>480){
-    gameOver();
-    return;
-  }
+  if(ball.y>480){ gameOver(); return; }
 
   ctx.fillStyle='#fff';
-  ctx.beginPath();
-  ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2);
-  ctx.fill();
+  ctx.beginPath(); ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2); ctx.fill();
   ctx.fillRect(paddle.x,paddle.y,paddle.w,paddle.h);
 
   requestAnimationFrame(loop);
 }
 
-/* 遊戲結束 */
 function gameOver(){
   playing=false;
-  clearInterval(timerInterval); // 停止計時器，但不重置秒數
-  timerInterval = null;
-
-  const f=punishFoods[Math.floor(Math.random()*punishFoods.length)];
-  flowerText.textContent='哈哈哈哈哈，我沒有手玩得都你好';
-  pickFood(f);
+  clearInterval(timerInt);
+  flowerText.textContent=loseTaunts[Math.floor(Math.random()*loseTaunts.length)];
+  pickFood(punishFoods[Math.floor(Math.random()*punishFoods.length)]);
   setTimeout(()=>overlay.style.display='none',1500);
 }
 
-/* 勝利 */
-function winGame(resetDisplay = true){
+function winGame(){
   playing=false;
-  if(resetDisplay){
-    clearInterval(timerInterval);
-    timerInterval = null;
-    moreFunTimer = 0;
-    timerDisplay.textContent = '撐了 0 秒';
-  }
-  const f=rewardFoods[Math.floor(Math.random()*rewardFoods.length)];
-  flowerText.textContent='你勝利了！';
-  pickFood(f);
+  flowerText.textContent='你撐過 30 秒了，快去吃吧';
+  pickFood(rewardFoods[Math.floor(Math.random()*rewardFoods.length)]);
   setTimeout(()=>overlay.style.display='none',1500);
 }
 </script>
